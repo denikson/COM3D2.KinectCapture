@@ -12,11 +12,18 @@ namespace COM3D2.KinectCapture.Plugin
         StreamServiceSender<IKinectService> kinectServiceSender;
         NamedPipeStream servicePipe;
 
+        public Queue<Dictionary<BodyJointType, BodyJoint>> JointFrameQueue { get; } = new Queue<Dictionary<BodyJointType, BodyJoint>>();
         public IKinectService KinectService { get; private set; }
+        object bodyLock = new object();
 
         public void OnBodyFrameReceived(Dictionary<BodyJointType, BodyJoint> joints)
         {
-            Console.WriteLine($"Got frame with {joints.Count} joints!");
+            JointFrameQueue.Enqueue(joints);
+        }
+
+        public Dictionary<BodyJointType, BodyJoint> GetNextBodyFrame()
+        {
+            return JointFrameQueue.Count == 0 ? null : JointFrameQueue.Dequeue();
         }
 
         public void OnLogMessageReceived(string message) { Console.WriteLine($"[KinectCaptureService] {message}"); }

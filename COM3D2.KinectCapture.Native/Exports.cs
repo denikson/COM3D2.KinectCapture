@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using COM3D2.KinectCapture.Shared.Contract;
+using COM3D2.KinectCapture.Shared.Util;
 using MiniIPC.Service;
 
 namespace COM3D2.KinectCapture.Native
@@ -17,12 +18,14 @@ namespace COM3D2.KinectCapture.Native
         static bool running = true;
         static Thread thread;
         static string currentPath;
+        static uint threadID;
 
         [DllExport(CallingConvention.StdCall)]
         public static void Close()
         {
             servicePipe = null;
             running = false;
+            ThreadHelper.CancelSynchronousIo(threadID);
             serviceReceiver.Dispose();
             service.Close();
         }
@@ -50,6 +53,7 @@ namespace COM3D2.KinectCapture.Native
 
         static void StartPipeHandler()
         {
+            threadID = ThreadHelper.GetCurrentThreadId();
             servicePipe.WaitForConnection();
 
             while (running)
