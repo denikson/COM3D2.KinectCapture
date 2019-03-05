@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>2911612d-22ce-4085-bca2-7dfe67e1fedf</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>COM3D2.KinectCapture.Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Contract\IKinectListener.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Contract\IKinectService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Data\BodyJoint.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Data\BodyJointType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Data\Vec.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IPC\Delegates.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IPC\DynamicCodeGenerator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IPC\ProxyFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IPC\Service\Error.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IPC\Service\RemoteException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IPC\Service\ServiceHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IPC\Service\StreamServiceReceiver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IPC\Service\StreamServiceSender.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NamedPipeStream.cs" />
+  </ItemGroup>
+</Project>

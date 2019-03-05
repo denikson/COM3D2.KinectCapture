@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.168
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "COM3D2.KinectCapture.Plugin", "COM3D2.KinectCapture.Plugin\COM3D2.KinectCapture.Plugin.csproj", "{D4E63D6E-C29C-447B-8E53-293FE5F6EBB2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "COM3D2.KinectCapture.Native", "COM3D2.KinectCapture.Native\COM3D2.KinectCapture.Native.csproj", "{B9951953-CD2D-43E3-B55A-908ECD381804}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "COM3D2.KinectCapture.Shared", "COM3D2.KinectCapture.Shared\COM3D2.KinectCapture.Shared.shproj", "{2911612D-22CE-4085-BCA2-7DFE67E1FEDF}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		COM3D2.KinectCapture.Shared\COM3D2.KinectCapture.Shared.projitems*{2911612d-22ce-4085-bca2-7dfe67e1fedf}*SharedItemsImports = 13
+		COM3D2.KinectCapture.Shared\COM3D2.KinectCapture.Shared.projitems*{b9951953-cd2d-43e3-b55a-908ecd381804}*SharedItemsImports = 4
+		COM3D2.KinectCapture.Shared\COM3D2.KinectCapture.Shared.projitems*{d4e63d6e-c29c-447b-8e53-293fe5f6ebb2}*SharedItemsImports = 4
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D4E63D6E-C29C-447B-8E53-293FE5F6EBB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4E63D6E-C29C-447B-8E53-293FE5F6EBB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4E63D6E-C29C-447B-8E53-293FE5F6EBB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4E63D6E-C29C-447B-8E53-293FE5F6EBB2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9951953-CD2D-43E3-B55A-908ECD381804}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9951953-CD2D-43E3-B55A-908ECD381804}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9951953-CD2D-43E3-B55A-908ECD381804}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9951953-CD2D-43E3-B55A-908ECD381804}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5026162E-31BF-4EFD-A061-D46861E74808}
+	EndGlobalSection
+EndGlobal
