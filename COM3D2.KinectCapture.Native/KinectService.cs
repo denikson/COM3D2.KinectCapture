@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Forms;
 using COM3D2.KinectCapture.Shared.Contract;
 using COM3D2.KinectCapture.Shared.Data;
 using Microsoft.Kinect;
@@ -15,6 +16,7 @@ namespace COM3D2.KinectCapture.Native
         NamedPipeStream listenerPipe;
         StreamServiceSender<IKinectListener> listenerSender;
         KinectSensor sensor;
+        KinectJointFilter jointFilter;
 
         public void InitializeSensor()
         {
@@ -37,6 +39,7 @@ namespace COM3D2.KinectCapture.Native
                 bodyFrameReader.IsPaused = false;
             else
             {
+                jointFilter = new KinectJointFilter();
                 bodyFrameReader = sensor.BodyFrameSource.OpenReader();
                 bodyFrameReader.FrameArrived += BodyFrameReaderOnFrameArrived;
             }
@@ -80,15 +83,20 @@ namespace COM3D2.KinectCapture.Native
                 if (trackedBody == null)
                     return;
 
-                listener.OnLogMessageReceived("Got body");
+                jointFilter.UpdateFilter(trackedBody);
+
+                var filteredJoints = jointFilter.GetFilteredJoints();
 
                 var joints = new Dictionary<BodyJointType, BodyJoint>();
 
-                foreach (var joint in trackedBody.Joints.Values)
-                    joints[(BodyJointType) joint.JointType] = new BodyJoint
+                for (var index = 0; index < filteredJoints.Length; index++)
+                {
+                    var joint = filteredJoints[index];
+                    joints[(BodyJointType) index] = new BodyJoint
                     {
-                        Position = new Vec3 {X = joint.Position.X, Y = joint.Position.Y, Z = joint.Position.Z}
+                        Position = new Vec3 {X = joint.X, Y = joint.Y, Z = joint.Z}
                     };
+                }
 
                 foreach (var jointOrientation in trackedBody.JointOrientations.Values)
                     joints[(BodyJointType) jointOrientation.JointType].Orientation = new Vec4
