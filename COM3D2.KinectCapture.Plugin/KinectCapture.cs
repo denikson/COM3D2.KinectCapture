@@ -213,7 +213,7 @@ namespace COM3D2.KinectCapture.Plugin
             "Bip01 Spine0a", // None
             "Bip01 Spine1", // SpineMid
             "Bip01 Spine1a", // None / SpineMid
-            "Mouth",
+            //"Mouth",
             //"Mune_R",
             //"Nipple_R",
             "Bip01 R Clavicle", // None / ShoulderRight
@@ -227,12 +227,12 @@ namespace COM3D2.KinectCapture.Plugin
             "Bip01 L UpperArm", // ShoulderRight
             "Bip01 L Forearm", // ElbowLeft
             "Bip01 L Hand", // HandLeft
-            "Hip_R", // => HipRight
-            "Bip01 R Thigh",
+            //"Hip_R", 
+            "Bip01 R Thigh", // => HipRight
             "Bip01 R Calf", // => KneeRight
             "Bip01 R Foot", // => AnkleRight / FootRight
-            "Hip_L",  // => HipLeft
-            "Bip01 L Thigh",
+            //"Hip_L",  
+            "Bip01 L Thigh", // => HipLeft
             "Bip01 L Calf", // => KneeLeft
             "Bip01 L Foot", // => AnkleLeft / FootLeft
         };
