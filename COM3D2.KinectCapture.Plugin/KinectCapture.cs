@@ -37,6 +37,30 @@ namespace COM3D2.KinectCapture.Plugin
 
         Dictionary<Transform, GameObject> boneDict = new Dictionary<Transform, GameObject>();
 
+        Dictionary<string, BodyJointType> maidBodyToKinectJointsDict = new Dictionary<string, BodyJointType>
+        {
+            ["Bip01 L Thigh"] = BodyJointType.HipLeft,
+            ["Bip01 L Calf"] = BodyJointType.KneeLeft,
+            ["Bip01 L Foot"] = BodyJointType.AnkleLeft,
+            ["Bip01 R Thigh"] = BodyJointType.HipRight,
+            ["Bip01 R Calf"] = BodyJointType.KneeRight,
+            ["Bip01 R Foot"] = BodyJointType.AnkleRight,
+            //["Bip01 Pelvis"] = BodyJointType.SpineBase,
+            ["Bip01 Spine"] = BodyJointType.SpineBase,
+            ["Bip01 Spine1"] = BodyJointType.SpineMid,
+            //["Bip01 Spine1a"] = BodyJointType.SpineMid,
+            //["Bip01 R Clavicle"] = BodyJointType.ShoulderRight,
+            ["Bip01 L UpperArm"] = BodyJointType.ShoulderLeft,
+            ["Bip01 L Forearm"] = BodyJointType.ElbowLeft,
+            ["Bip01 L Hand"] = BodyJointType.HandLeft,
+            ["Bip01 Neck"] = BodyJointType.Neck,
+            ["Bip01 Head"] = BodyJointType.Head,
+            ["Bip01 R UpperArm"] = BodyJointType.ShoulderRight,
+            ["Bip01 R Forearm"] = BodyJointType.ElbowRight,
+            ["Bip01 R Hand"] = BodyJointType.HandRight,
+            //["Bip01 L Clavicle"] = BodyJointType.ShoulderLeft,
+        };
+
         readonly string[] boneNames =
         {
             //"Bip01",
@@ -219,32 +243,32 @@ namespace COM3D2.KinectCapture.Plugin
             Log("Connected!");
         }
 
-        void LateUpdate()
-        {
-            if (!trackBones)
-                return;
+        //void LateUpdate()
+        //{
+        //    if (!trackBones)
+        //        return;
 
-            var jointInfo = listener.GetNextBodyFrame();
+        //    var jointInfo = listener.GetNextBodyFrame();
 
-            if (jointInfo == null)
-                return;
+        //    if (jointInfo == null)
+        //        return;
 
-            foreach (var joint in joints)
-            {
-                var o = joint.Value;
-                if (jointInfo.TryGetValue(joint.Key, out var info))
-                {
-                    o.SetActive(true);
-                    o.transform.localPosition =
-                        new Vector3(info.Position.X * 1.5f, info.Position.Y * 1.5f, info.Position.Z * 1.5f);
-                    o.transform.localRotation =
-                        new Quaternion(info.Orientation.X, info.Orientation.Y, info.Orientation.Z, info.Orientation.W);
-                    Console.WriteLine($"Rotation quaternion: {o.transform.localRotation}");
-                }
-                else
-                    o.SetActive(false);
-            }
-        }
+        //    foreach (var joint in joints)
+        //    {
+        //        var o = joint.Value;
+        //        if (jointInfo.TryGetValue(joint.Key, out var info))
+        //        {
+        //            o.SetActive(true);
+        //            o.transform.localPosition =
+        //                new Vector3(info.Position.X * 1.5f, info.Position.Y * 1.5f, info.Position.Z * 1.5f);
+        //            o.transform.localRotation =
+        //                new Quaternion(info.Orientation.X, info.Orientation.Y, info.Orientation.Z, info.Orientation.W);
+        //            Console.WriteLine($"Rotation quaternion: {o.transform.localRotation}");
+        //        }
+        //        else
+        //            o.SetActive(false);
+        //    }
+        //}
 
         void Log(string msg) { Debug.Log($"[KinectCapture] {msg}"); }
 
@@ -283,6 +307,123 @@ namespace COM3D2.KinectCapture.Plugin
             captureServicePipe?.Dispose();
         }
 
+        Dictionary<BodyJointType, Transform> bodyJoints = new Dictionary<BodyJointType, Transform>();
+        Dictionary<BodyJointType, Transform> maidJoints = new Dictionary<BodyJointType, Transform>();
+        Transform bipJoint = null;
+
+        void InitKinectObject(TBody maidBody, Vector3 startingPosition)
+        {
+            kinectPosition = new GameObject();
+            kinectPosition.transform.position = startingPosition;
+
+            var kinectCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            kinectCube.transform.SetParent(kinectPosition.transform);
+            kinectCube.transform.localPosition = Vector3.zero;
+            kinectCube.transform.localScale = 0.1f * Vector3.one;
+
+            foreach (var value in Enum.GetValues(typeof(BodyJointType)))
+            {
+                var o = GameObject.CreatePrimitive(PrimitiveType.Sphere);/*new GameObject($"KinectJoint_{value}");*/
+                o.transform.SetParent(kinectPosition.transform);
+                o.transform.localScale = 0.01f * Vector3.one;
+                o.transform.localPosition = 2f * Vector3.forward;
+                bodyJoints[(BodyJointType) value] = o.transform;
+            }
+
+            var gizmo = kinectPosition.AddComponent<GizmoRender>();
+            gizmo.eAxis = true;
+            gizmo.eRotate = true;
+            gizmo.offsetScale = 0.5f;
+            gizmo.Visible = true;
+
+            foreach (var jointType in maidBodyToKinectJointsDict)
+                maidJoints.Add(jointType.Value, maidBody.GetBone(jointType.Key));
+            bipJoint = maidBody.GetBone("Bip01");
+
+            foreach (var keyValuePair in maidJoints)
+                Log(keyValuePair.Value.name);
+        }
+
+        float rotationX = 0f;
+        float rotationY = 0f;
+        float rotationZ = 0f;
+
+        void UpdateMotion()
+        {
+            if (!trackBones)
+                return;
+
+            var jointInfo = listener.GetNextBodyFrame();
+
+            if (jointInfo != null)
+            {
+                foreach (var bodyJoint in bodyJoints)
+                {
+                    var jointData = jointInfo[bodyJoint.Key];
+                    var jointTransform = bodyJoint.Value;
+
+                    jointTransform.localPosition = new Vector3(-jointData.Position.X * 0.9f, jointData.Position.Y * 0.9f, jointData.Position.Z * 0.9f);
+                    //jointTransform.localRotation = new Quaternion(-jointData.Orientation.X, jointData.Orientation.Y, jointData.Orientation.Z, jointData.Orientation.W);
+                    //jointTransform.Rotate(rotationX, rotationY, rotationZ, Space.Self);
+                }
+            }
+
+            bipJoint.rotation = bodyJoints[BodyJointType.SpineBase].rotation;
+            bipJoint.position = bodyJoints[BodyJointType.SpineBase].position;
+            foreach (var maidJoint in maidJoints)
+            {
+                var jointTransform = bodyJoints[maidJoint.Key];
+                var maidJointTransform = maidJoint.Value;
+
+                maidJointTransform.rotation = jointTransform.rotation;
+                maidJointTransform.position = jointTransform.position;
+            }
+
+
+            //foreach (var joint in joints)
+            //{
+            //    var o = joint.Value;
+            //    if (jointInfo.TryGetValue(joint.Key, out var info))
+            //    {
+            //        o.SetActive(true);
+            //        o.transform.localPosition =
+            //            new Vector3(info.Position.X * 1.5f, info.Position.Y * 1.5f, info.Position.Z * 1.5f);
+            //        o.transform.localRotation =
+            //            new Quaternion(info.Orientation.X, info.Orientation.Y, info.Orientation.Z, info.Orientation.W);
+            //        Console.WriteLine($"Rotation quaternion: {o.transform.localRotation}");
+            //    }
+            //    else
+            //        o.SetActive(false);
+            //}
+
+            //if (prevSphere != null)
+            //{
+            //    t += 100.0f * Time.deltaTime;
+
+            //    if (t > 360f)
+            //        t = 0f;
+
+            //    maidTransforms[prevIndex].transform.rotation = Quaternion.Euler(t, t, t);
+            //}
+        }
+
+        void PrintHierarchy(Transform t, HashSet<string> items)
+        {
+            if (items.Count == 0)
+                return;
+
+            if (items.Contains(t.name))
+            {
+                Log(t.name);
+                items.Remove(t.name);
+            }
+
+            for (int i = 0; i < t.childCount; i++)
+            {
+                PrintHierarchy(t.GetChild(i), items);
+            }
+        }
+
         void Update()
         {
             // Add delegate to OnLateUpdateEnd in maid body to override all transforms
@@ -299,27 +440,27 @@ namespace COM3D2.KinectCapture.Plugin
                 sphere.Value.transform.rotation = bone.transform.rotation;
             }
 
-            // Highlight one of the bones
-            if (Input.GetKeyDown(KeyCode.Keypad9))
-            {
-                var sphere = boneObjects[index];
-                if (prevSphere != null)
-                {
-                    maidTransforms[prevIndex].transform.rotation = prevRotation;
-                    prevSphere.transform.localScale = Vector3.one * 0.05f;
-                    prevSphere.GetComponent<Renderer>().material.color = prevColor;
-                }
+            //// Highlight one of the bones
+            //if (Input.GetKeyDown(KeyCode.Keypad9))
+            //{
+            //    var sphere = boneObjects[index];
+            //    if (prevSphere != null)
+            //    {
+            //        maidTransforms[prevIndex].transform.rotation = prevRotation;
+            //        prevSphere.transform.localScale = Vector3.one * 0.05f;
+            //        prevSphere.GetComponent<Renderer>().material.color = prevColor;
+            //    }
 
-                Log($"Highlighting {sphere.Key}");
+            //    Log($"Highlighting {sphere.Key}");
 
-                prevSphere = sphere.Value;
-                sphere.Value.transform.localScale = Vector3.one * 0.08f;
-                prevColor = prevSphere.GetComponent<Renderer>().material.color;
-                prevSphere.GetComponent<Renderer>().material.color = new Color(1f, 1f, 1f, 0.5f);
-                prevRotation = maidTransforms[index].transform.rotation;
-                prevIndex = index;
-                index = (index + 1) % boneObjects.Count;
-            }
+            //    prevSphere = sphere.Value;
+            //    sphere.Value.transform.localScale = Vector3.one * 0.08f;
+            //    prevColor = prevSphere.GetComponent<Renderer>().material.color;
+            //    prevSphere.GetComponent<Renderer>().material.color = new Color(1f, 1f, 1f, 0.5f);
+            //    prevRotation = maidTransforms[index].transform.rotation;
+            //    prevIndex = index;
+            //    index = (index + 1) % boneObjects.Count;
+            //}
 
             // Create custom objects of the bones
             if (Input.GetKeyDown(KeyCode.Keypad7))
@@ -337,23 +478,13 @@ namespace COM3D2.KinectCapture.Plugin
                 }
 
                 var pos = maid.transform.position;
-
+                maidBody = maid.body0;
                 Log($"Found maid at {pos}");
 
-                kinectPosition = new GameObject();
-                kinectPosition.transform.position = pos - Vector3.back * 1.0f + Vector3.up * 1.0f;
-                kinectPosition.transform.Rotate(Vector3.up, 180.0f);
-                kinectPosition.transform.localScale = 0.5f * Vector3.one;
+                //var set = new HashSet<string>(maidBodyToKinectJointsDict.Keys);
+                //PrintHierarchy(maid.transform, set);
 
-                foreach (var value in Enum.GetValues(typeof(BodyJointType)))
-                {
-                    var o = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    o.transform.localScale = 0.1f * Vector3.one;
-                    o.GetComponent<Renderer>().material.color = Color.red;
-                    o.SetActive(false);
-                    o.transform.SetParent(kinectPosition.transform);
-                    joints[(BodyJointType) value] = o;
-                }
+                InitKinectObject(maidBody, pos - Vector3.back * 1.0f + Vector3.up * 1.0f);
 
                 listener.KinectService.ListenBoneData();
                 trackBones = true;
@@ -363,30 +494,37 @@ namespace COM3D2.KinectCapture.Plugin
                 listener.KinectService.StopListeningBoneData();
 
             if (Input.GetKeyDown(KeyCode.I))
-                kinectPosition.transform.position += 0.25f * Vector3.forward;
-            if (Input.GetKeyDown(KeyCode.K))
-                kinectPosition.transform.position -= 0.25f * Vector3.forward;
-            if (Input.GetKeyDown(KeyCode.J))
-                kinectPosition.transform.position += 0.25f * Vector3.left;
-            if (Input.GetKeyDown(KeyCode.L))
-                kinectPosition.transform.position -= 0.25f * Vector3.left;
-            if (Input.GetKeyDown(KeyCode.O))
-                kinectPosition.transform.position += 0.25f * Vector3.up;
-            if (Input.GetKeyDown(KeyCode.U))
-                kinectPosition.transform.position -= 0.25f * Vector3.up;
-        }
-
-        void UpdateMotion()
-        {
-            if (prevSphere != null)
             {
-                t += 100.0f * Time.deltaTime;
-
-                if (t > 360f)
-                    t = 0f;
-
-                maidTransforms[prevIndex].transform.rotation = Quaternion.Euler(t, t, t);
+                rotationX += 10f;
+                Log($"Rotation X: {rotationX}");
+            }
+            if (Input.GetKeyDown(KeyCode.K))
+            {
+                rotationX -= 10f;
+                Log($"Rotation X: {rotationX}");
+            }
+            if (Input.GetKeyDown(KeyCode.J))
+            {
+                rotationY += 10f;
+                Log($"Rotation Y: {rotationY}");
+            }
+            if (Input.GetKeyDown(KeyCode.L))
+            {
+                rotationY -= 10f;
+                Log($"Rotation Y: {rotationY}");
+            }
+            if (Input.GetKeyDown(KeyCode.O))
+            {
+                rotationZ += 10f;
+                Log($"Rotation Z: {rotationZ}");
+            }
+            if (Input.GetKeyDown(KeyCode.U))
+            {
+                rotationZ -= 10f;
+                Log($"Rotation Z: {rotationZ}");
             }
         }
+
+
     }
 }
