@@ -190,12 +190,15 @@ namespace COM3D2.KinectCapture.Plugin
 
                 var c = Random.ColorHSV();
 
-                var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                go.GetComponent<Renderer>().material = new Material(Shader.Find("Transparent/Diffuse")) {color = c};
-                go.transform.position = bone.position - 2.0f * Vector3.left;
-                go.transform.localRotation = Quaternion.identity;
-                go.transform.localScale = 0.05f * Vector3.one;
+                Log($"Creating node {boneName}");
+                var go = CreateBoneNode(boneName); 
                 go.SetActive(true);
+                /*GameObject.CreatePrimitive(PrimitiveType.Cube);*/
+                //go.GetComponent<Renderer>().material = new Material(Shader.Find("Transparent/Diffuse")) {color = c};
+                //go.transform.position = bone.position - 2.0f * Vector3.left;
+                //go.transform.localRotation = Quaternion.identity;
+                //go.transform.localScale = 0.05f * Vector3.one;
+                //go.SetActive(true);
 
                 maidTransforms.Add(bone.gameObject);
                 boneObjects.Add(new KeyValuePair<string, GameObject>(boneName, go));
@@ -422,6 +425,36 @@ namespace COM3D2.KinectCapture.Plugin
             {
                 PrintHierarchy(t.GetChild(i), items);
             }
+        }
+
+        GameObject CreateBoneNode(string name)
+        {
+            GameObject mainObject = new GameObject($"Bone_{name}");
+
+            GameObject forward = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            forward.transform.localScale = new Vector3(0.01f, 0.05f, 0.01f);
+            forward.transform.localPosition = new Vector3(0, 0.05f, 0);
+            forward.transform.SetParent(mainObject.transform);
+            forward.GetComponent<Renderer>().material = new Material(Shader.Find("Transparent/Diffuse")) { color = Color.blue };
+            forward.SetActive(true);
+
+            GameObject up = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            up.transform.localScale = new Vector3(0.01f, 0.05f, 0.01f);
+            up.transform.localPosition = new Vector3(-0.05f, 0, 0);
+            up.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            up.transform.SetParent(mainObject.transform);
+            up.GetComponent<Renderer>().material = new Material(Shader.Find("Transparent/Diffuse")) { color = Color.green };
+            up.SetActive(true);
+
+            GameObject left = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            left.transform.localScale = new Vector3(0.01f, 0.05f, 0.01f);
+            left.transform.localPosition = new Vector3(0, 0, 0.05f);
+            left.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            left.transform.SetParent(mainObject.transform);
+            left.GetComponent<Renderer>().material = new Material(Shader.Find("Transparent/Diffuse")) { color = Color.red };
+            left.SetActive(true);
+
+            return mainObject;
         }
 
         void Update()
