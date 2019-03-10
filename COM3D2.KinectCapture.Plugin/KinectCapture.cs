@@ -314,6 +314,8 @@ namespace COM3D2.KinectCapture.Plugin
         Dictionary<BodyJointType, Transform> maidJoints = new Dictionary<BodyJointType, Transform>();
         Transform bipJoint = null;
 
+        Dictionary<BodyJointType, Transform> bodyJointGizmos = new Dictionary<BodyJointType, Transform>();
+
         void InitKinectObject(TBody maidBody, Vector3 startingPosition)
         {
             kinectPosition = new GameObject();
@@ -326,11 +328,15 @@ namespace COM3D2.KinectCapture.Plugin
 
             foreach (var value in Enum.GetValues(typeof(BodyJointType)))
             {
-                var o = GameObject.CreatePrimitive(PrimitiveType.Sphere);/*new GameObject($"KinectJoint_{value}");*/
+                var o = new GameObject(); /*GameObject.CreatePrimitive(PrimitiveType.Sphere);*//*new GameObject($"KinectJoint_{value}");*/
                 o.transform.SetParent(kinectPosition.transform);
-                o.transform.localScale = 0.01f * Vector3.one;
+                //o.transform.localScale = 0.01f * Vector3.one;
                 o.transform.localPosition = 2f * Vector3.forward;
+                var boneDraw = CreateBoneNode($"kinect_{value}");
+                boneDraw.transform.SetParent(kinectPosition.transform);
+                //boneDraw.transform.localPosition += Vector3.forward * 2f;
                 bodyJoints[(BodyJointType) value] = o.transform;
+                bodyJointGizmos[(BodyJointType) value] = boneDraw.transform;
             }
 
             var gizmo = kinectPosition.AddComponent<GizmoRender>();
@@ -364,9 +370,12 @@ namespace COM3D2.KinectCapture.Plugin
                 {
                     var jointData = jointInfo[bodyJoint.Key];
                     var jointTransform = bodyJoint.Value;
+                    var gizmo = bodyJointGizmos[bodyJoint.Key];
 
-                    jointTransform.localPosition = new Vector3(-jointData.Position.X * 0.9f, jointData.Position.Y * 0.9f, jointData.Position.Z * 0.9f);
-                    //jointTransform.localRotation = new Quaternion(-jointData.Orientation.X, jointData.Orientation.Y, jointData.Orientation.Z, jointData.Orientation.W);
+                    jointTransform.localPosition = new Vector3(jointData.Position.X * 0.9f, jointData.Position.Y * 0.9f, jointData.Position.Z * 0.9f);
+                    jointTransform.localRotation = new Quaternion(jointData.Orientation.X, jointData.Orientation.Y, jointData.Orientation.Z, jointData.Orientation.W);
+                    gizmo.position = jointTransform.position + Vector3.left * 2f;
+                    gizmo.rotation = jointTransform.rotation;
                     //jointTransform.Rotate(rotationX, rotationY, rotationZ, Space.Self);
                 }
             }
@@ -457,6 +466,8 @@ namespace COM3D2.KinectCapture.Plugin
             return mainObject;
         }
 
+        private bool startedTrackingBones = false;
+
         void Update()
         {
             // Add delegate to OnLateUpdateEnd in maid body to override all transforms
@@ -465,13 +476,17 @@ namespace COM3D2.KinectCapture.Plugin
                     (Action) Delegate.Combine(maidBody.OnLateUpdateEnd, new Action(UpdateMotion));
 
             // Track the bone
-            for (var i = 0; i < boneObjects.Count; i++)
+            if (!startedTrackingBones)
             {
-                var sphere = boneObjects[i];
-                var bone = maidTransforms[i];
-                sphere.Value.transform.position = bone.transform.position - 2.0f * Vector3.left;
-                sphere.Value.transform.rotation = bone.transform.rotation;
+                for (var i = 0; i < boneObjects.Count; i++)
+                {
+                    var sphere = boneObjects[i];
+                    var bone = maidTransforms[i];
+                    sphere.Value.transform.position = bone.transform.position - 2.0f * Vector3.left;
+                    sphere.Value.transform.rotation = bone.transform.rotation;
+                }
             }
+            
 
             //// Highlight one of the bones
             //if (Input.GetKeyDown(KeyCode.Keypad9))
@@ -519,6 +534,26 @@ namespace COM3D2.KinectCapture.Plugin
 
                 InitKinectObject(maidBody, pos - Vector3.back * 1.0f + Vector3.up * 1.0f);
 
+                listener.KinectService.ListenBoneData();
+                trackBones = true;
+                startedTrackingBones = true;
+            }
+
+            if (Input.GetMouseButtonDown(3))
+            {
+                if (!trackBones)
+                    return;
+
+                Log($"Stopping bone tracking");
+                trackBones = false;
+                listener.KinectService.StopListeningBoneData();
+            }
+
+            if (Input.GetMouseButtonDown(4))
+            {
+                if (trackBones)
+                    return;
+                Log($"Restarting bone tracking");
                 listener.KinectService.ListenBoneData();
                 trackBones = true;
             }
