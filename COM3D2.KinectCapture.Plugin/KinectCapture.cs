@@ -37,6 +37,39 @@ namespace COM3D2.KinectCapture.Plugin
 
         Dictionary<Transform, GameObject> boneDict = new Dictionary<Transform, GameObject>();
 
+        Dictionary<BodyJointType, BodyJointType> immediateChildrenDict = new Dictionary<BodyJointType, BodyJointType>
+        {
+            [BodyJointType.SpineBase] = BodyJointType.SpineMid,
+            [BodyJointType.SpineMid] = BodyJointType.SpineShoulder,
+            [BodyJointType.SpineShoulder] = BodyJointType.Neck,
+            [BodyJointType.Neck] = BodyJointType.Head,
+            //[BodyJointType.Head] = None,
+
+
+            [BodyJointType.ShoulderRight] = BodyJointType.ElbowRight,
+            [BodyJointType.ElbowRight] = BodyJointType.WristRight,
+            [BodyJointType.WristRight] = BodyJointType.HandRight,
+            [BodyJointType.HandRight] = BodyJointType.HandTipRight,
+            //[BodyJointType.ThumbRight] = BodyJointType.WristRight,
+            //[BodyJointType.HandTipRight] = BodyJointType.HandRight,
+
+
+            [BodyJointType.ShoulderLeft] = BodyJointType.ElbowLeft,
+            [BodyJointType.ElbowLeft] = BodyJointType.WristLeft,
+            [BodyJointType.WristLeft] = BodyJointType.HandLeft,
+            [BodyJointType.HandLeft] = BodyJointType.HandTipLeft,
+
+
+            [BodyJointType.HipRight] = BodyJointType.KneeRight,
+            [BodyJointType.KneeRight] = BodyJointType.AnkleRight,
+            [BodyJointType.AnkleRight] = BodyJointType.FootRight,
+            //[BodyJointType.FootRight] = BodyJointType.AnkleRight,
+
+            [BodyJointType.HipLeft] = BodyJointType.KneeLeft,
+            [BodyJointType.KneeLeft] = BodyJointType.AnkleLeft,
+            [BodyJointType.AnkleLeft] = BodyJointType.FootLeft,
+        };
+
         Dictionary<string, BodyJointType> maidBodyToKinectJointsDict = new Dictionary<string, BodyJointType>
         {
             ["Bip01 L Thigh"] = BodyJointType.HipLeft,
@@ -350,7 +383,7 @@ namespace COM3D2.KinectCapture.Plugin
             bipJoint = maidBody.GetBone("Bip01");
 
             foreach (var keyValuePair in maidJoints)
-                Log(keyValuePair.Value.name);
+                Log($"{keyValuePair.Value.name}: Local pos: {keyValuePair.Value.localPosition}; Local rot: {keyValuePair.Value.localRotation}");
         }
 
         float rotationX = 0f;
@@ -370,10 +403,30 @@ namespace COM3D2.KinectCapture.Plugin
                 {
                     var jointData = jointInfo[bodyJoint.Key];
                     var jointTransform = bodyJoint.Value;
-                    var gizmo = bodyJointGizmos[bodyJoint.Key];
 
                     jointTransform.localPosition = new Vector3(jointData.Position.X * 0.9f, jointData.Position.Y * 0.9f, jointData.Position.Z * 0.9f);
                     jointTransform.localRotation = new Quaternion(jointData.Orientation.X, jointData.Orientation.Y, jointData.Orientation.Z, jointData.Orientation.W);
+                    //jointTransform.Rotate(rotationX, rotationY, rotationZ, Space.Self);
+                }
+
+                foreach (var bodyJoint in bodyJoints)
+                {
+                    var jointTransform = bodyJoint.Value;
+
+                    if (!immediateChildrenDict.TryGetValue(bodyJoint.Key, out var child))
+                        continue;
+
+                    var rotFix = Quaternion.LookRotation(bodyJoints[child].localPosition - jointTransform.localPosition, Vector3.up);
+                    jointTransform.localRotation = rotFix * jointTransform.localRotation;
+
+                    //jointTransform.Rotate(rotationX, rotationY, rotationZ, Space.Self);
+                }
+
+                foreach (var bodyJoint in bodyJoints)
+                {
+                    var jointTransform = bodyJoint.Value;
+                    var gizmo = bodyJointGizmos[bodyJoint.Key];
+
                     gizmo.position = jointTransform.position + Vector3.left * 2f;
                     gizmo.rotation = jointTransform.rotation;
                     //jointTransform.Rotate(rotationX, rotationY, rotationZ, Space.Self);
@@ -444,7 +497,7 @@ namespace COM3D2.KinectCapture.Plugin
             forward.transform.localScale = new Vector3(0.01f, 0.05f, 0.01f);
             forward.transform.localPosition = new Vector3(0, 0.05f, 0);
             forward.transform.SetParent(mainObject.transform);
-            forward.GetComponent<Renderer>().material = new Material(Shader.Find("Transparent/Diffuse")) { color = Color.blue };
+            forward.GetComponent<Renderer>().material = new Material(Shader.Find("Transparent/Diffuse")) { color = Color.green };
             forward.SetActive(true);
 
             GameObject up = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -452,7 +505,7 @@ namespace COM3D2.KinectCapture.Plugin
             up.transform.localPosition = new Vector3(-0.05f, 0, 0);
             up.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
             up.transform.SetParent(mainObject.transform);
-            up.GetComponent<Renderer>().material = new Material(Shader.Find("Transparent/Diffuse")) { color = Color.green };
+            up.GetComponent<Renderer>().material = new Material(Shader.Find("Transparent/Diffuse")) { color = Color.red };
             up.SetActive(true);
 
             GameObject left = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -460,7 +513,7 @@ namespace COM3D2.KinectCapture.Plugin
             left.transform.localPosition = new Vector3(0, 0, 0.05f);
             left.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
             left.transform.SetParent(mainObject.transform);
-            left.GetComponent<Renderer>().material = new Material(Shader.Find("Transparent/Diffuse")) { color = Color.red };
+            left.GetComponent<Renderer>().material = new Material(Shader.Find("Transparent/Diffuse")) { color = Color.blue };
             left.SetActive(true);
 
             return mainObject;
@@ -484,6 +537,12 @@ namespace COM3D2.KinectCapture.Plugin
                     var bone = maidTransforms[i];
                     sphere.Value.transform.position = bone.transform.position - 2.0f * Vector3.left;
                     sphere.Value.transform.rotation = bone.transform.rotation;
+
+                    //if (bone.name == "Bip01 Spine")
+                    //{
+                    //    var rot = bone.transform.rotation;
+                    //    Log($"Bip01 Spine quaternion: {rot} with angles: {rot.eulerAngles}");
+                    //}
                 }
             }
             
@@ -511,6 +570,21 @@ namespace COM3D2.KinectCapture.Plugin
             //}
 
             // Create custom objects of the bones
+            if (Input.GetKeyDown(KeyCode.Keypad9))
+            {
+                var maid = FindObjectOfType<Maid>();
+
+                if (maid == null)
+                {
+                    Log("No maid!");
+                    return;
+                }
+
+                var pos = maid.transform.position;
+
+                var bones = CreateBoneNode("testBone");
+                bones.transform.position = pos + 2f * Vector3.forward;
+            }
             if (Input.GetKeyDown(KeyCode.Keypad7))
                 DrawBones();
             if (Input.GetKeyDown(KeyCode.Keypad5))
